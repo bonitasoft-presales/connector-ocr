@@ -4,12 +4,17 @@ import org.bonitasoft.engine.connector.AbstractConnector;
 import org.bonitasoft.engine.connector.ConnectorException;
 import org.bonitasoft.engine.connector.ConnectorValidationException;
 
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
+
+
 import groovy.util.logging.Slf4j
 
 @Slf4j
 class connectorOCR extends AbstractConnector {
     
     def static final DEFAULT_INPUT = "defaultInput"
+    def static final LANGUAGE_INPUT = "eng"
     def static final DEFAULT_OUTPUT = "defaultOutput"
     
     /**
@@ -33,6 +38,12 @@ class connectorOCR extends AbstractConnector {
             throw new ConnectorValidationException(this, "'$inputName' parameter must be a String")
         }
     }
+
+    private static Tesseract getTesseract() {
+        Tesseract instance = new Tesseract()
+        instance.setDatapath("/bin/trainedData")
+        instance.setLanguage(LANGUAGE_INPUT)
+    }
     
     /**
      * Core method:
@@ -40,10 +51,18 @@ class connectorOCR extends AbstractConnector {
      * - Set the output of the connector execution. If outputs are not set, connector fails.
      */
     @Override
-    void executeBusinessLogic() throws ConnectorException {
+    void executeBusinessLogic() throws ConnectorException, TesseractException {
         def defaultInput = getInputParameter(DEFAULT_INPUT)
         log.info "$DEFAULT_INPUT : $defaultInput"
         setOutputParameter(DEFAULT_OUTPUT, "$defaultInput - output".toString())
+
+        Tesseract tesseract = getTesseract()
+        File file = new File()
+        String result = tesseract.doOCR(file)
+
+        setOutputParameter(DEFAULT_OUTPUT,result)
+
+
     }
     
     /**

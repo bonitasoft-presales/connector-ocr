@@ -67,6 +67,13 @@
         </dependency>
         <!-- You may add more Groovy modules if required, see https://groovy-lang.org/documentation.html#groovymoduleguides -->
 
+        <!-- Tesseract OCR-->
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>4.5.2</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.spockframework</groupId>
