@@ -1,22 +1,22 @@
 package com.bonitasoft.presales.connector
 
-import org.bonitasoft.engine.connector.AbstractConnector;
-import org.bonitasoft.engine.connector.ConnectorException;
-import org.bonitasoft.engine.connector.ConnectorValidationException;
-
-import net.sourceforge.tess4j.Tesseract;
-import net.sourceforge.tess4j.TesseractException;
-
-
 import groovy.util.logging.Slf4j
+import net.sourceforge.tess4j.Tesseract
+import net.sourceforge.tess4j.TesseractException
+import org.bonitasoft.engine.api.ProcessAPI
+import org.bonitasoft.engine.bpm.document.Document
+import org.bonitasoft.engine.bpm.document.DocumentNotFoundException
+import org.bonitasoft.engine.connector.AbstractConnector
+import org.bonitasoft.engine.connector.ConnectorException
+import org.bonitasoft.engine.connector.ConnectorValidationException
 
 @Slf4j
 class connectorOCR extends AbstractConnector {
-    
-    def static final DEFAULT_INPUT = "defaultInput"
-    def static final LANGUAGE_INPUT = "eng"
-    def static final DEFAULT_OUTPUT = "defaultOutput"
-    
+
+    def static final INPUT_ATTACHMENT = "defaultInput"
+    def static final INPUT_LANGUAGE = "eng"
+    def static final OUTPUT_OCR_RESULT = "defaultOutput"
+
     /**
      * Perform validation on the inputs defined on the connector definition (src/main/resources/connector-ocr.def)
      * You should:
@@ -25,7 +25,8 @@ class connectorOCR extends AbstractConnector {
      */
     @Override
     void validateInputParameters() throws ConnectorValidationException {
-        checkMandatoryStringInput(DEFAULT_INPUT)
+        checkMandatoryStringInput(INPUT_ATTACHMENT)
+        checkMandatoryStringInput(INPUT_LANGUAGE)
     }
     
     def checkMandatoryStringInput(inputName) throws ConnectorValidationException {
@@ -40,11 +41,26 @@ class connectorOCR extends AbstractConnector {
     }
 
     private static Tesseract getTesseract() {
+
         Tesseract instance = new Tesseract()
         instance.setDatapath("/bin/trainedData")
-        instance.setLanguage(LANGUAGE_INPUT)
+        instance.setLanguage(INPUT_LANGUAGE)
     }
-    
+
+    private Document getDocument(Object attachment, ProcessAPI processAPI)
+            throws ConnectorException, DocumentNotFoundException {
+        if (attachment instanceof String && !((String) attachment).trim().isEmpty()) {
+            String docName = (String) attachment;
+            long processInstanceId = getExecutionContext().getProcessInstanceId();
+            return processAPI.getLastDocument(processInstanceId, docName);
+        } else if (attachment instanceof Document) {
+            return (Document) attachment;
+        } else {
+            throw new ConnectorException(
+                    "Attachments must be document names or org.bonitasoft.engine.bpm.document.Document");
+        }
+    }
+
     /**
      * Core method:
      * - Execute all the business logic of your connector using the inputs (connect to an external service, compute some values ...).
@@ -52,17 +68,20 @@ class connectorOCR extends AbstractConnector {
      */
     @Override
     void executeBusinessLogic() throws ConnectorException, TesseractException {
-        def defaultInput = getInputParameter(DEFAULT_INPUT)
-        log.info "$DEFAULT_INPUT : $defaultInput"
-        setOutputParameter(DEFAULT_OUTPUT, "$defaultInput - output".toString())
-
+        def attachment = getInputParameter(INPUT_ATTACHMENT)
+        log.info "$INPUT_ATTACHMENT : $attachment"
         Tesseract tesseract = getTesseract()
-        File file = new File()
-        String result = tesseract.doOCR(file)
+        //Get document from case
+        try {
+            ProcessAPI processAPI = getAPIAccessor().getProcessAPI()
+            Document document = getDocument(attachment,processAPI)
+            def file = document as File
+            def result = tesseract.doOCR(file)
+            setOutputParameter(OUTPUT_OCR_RESULT,result)
 
-        setOutputParameter(DEFAULT_OUTPUT,result)
-
-
+        } catch (DocumentNotFoundException | IOException e) {
+            throw new ConnectorException(e);
+        }
     }
     
     /**

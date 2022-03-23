@@ -53,3 +53,4 @@ class connectorOCRTest extends Specification {
         assert outputs[(connectorOCR.DEFAULT_OUTPUT)] == 'valid - output'
     }
 }
+
