@@ -13,9 +13,9 @@ import org.bonitasoft.engine.connector.ConnectorValidationException
 @Slf4j
 class connectorOCR extends AbstractConnector {
 
-    def static final INPUT_ATTACHMENT = "defaultInput"
-    def static final INPUT_LANGUAGE = "eng"
-    def static final OUTPUT_OCR_RESULT = "defaultOutput"
+    def static final INPUT_ATTACHMENT = "attachment"
+    def static final INPUT_LANGUAGE = "language"
+    def static final OUTPUT_OCR_RESULT = "ocrOutput"
 
     /**
      * Perform validation on the inputs defined on the connector definition (src/main/resources/connector-ocr.def)
